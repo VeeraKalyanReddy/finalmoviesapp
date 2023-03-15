@@ -43,8 +43,7 @@ class Search extends Component {
     } else {
       this.setState({
         appStatus: appConstants.failure,
-        searchResults: [],
-        searchValue: '',
+        searchValue,
       })
     }
   }
@@ -84,19 +83,14 @@ class Search extends Component {
     </div>
   )
 
-  tryAgainForSearchResultsData = searchValue => {
+  tryAgainForSearchResultsData = () => {
+    const {searchValue} = this.state
     this.getSearchResultData(searchValue)
   }
 
-  failureSearchResultsView = () => {
-    const {searchValue} = this.state
-    return (
-      <FailurePage
-        searchValue={searchValue}
-        tryAgain={this.tryAgainForSearchResultsData}
-      />
-    )
-  }
+  failureSearchResultsView = () => (
+    <FailurePage tryAgain={this.tryAgainForSearchResultsData} />
+  )
 
   renderSearchView = () => {
     const {appStatus} = this.state
