@@ -54,6 +54,13 @@ const appTopRatedConstants = {
   failure: 'FAILURE',
 }
 
+const appPopularConstants = {
+  initial: 'INITIAL',
+  success: 'SUCCESS',
+  inProgress: 'INPROGRESS',
+  failure: 'FAILURE',
+}
+
 const isHome = true
 
 class Home extends Component {
@@ -61,11 +68,11 @@ class Home extends Component {
     appTrendingStatus: appTrendingConstants.initial,
     appOriginalsStatus: appOriginalConstants.initial,
     appTopRatedStatus: appTopRatedConstants.initial,
-
+    appPopularStatus: appPopularConstants.initial,
     trendingMovies: [],
     topRatedMovies: [],
     originalsMovies: [],
-
+    popularMovies: [],
     randomMovies: [],
   }
 
@@ -73,6 +80,34 @@ class Home extends Component {
     this.getTrendingMovies()
     this.getTopRatedMovies()
     this.getOriginalsMovies()
+    this.getPopularMovies()
+  }
+
+  getPopularMovies = async () => {
+    this.setState({appPopularStatus: appPopularConstants.inProgress})
+    const jwtToken = Cookies.get('jwt_token')
+    const popularUrl = 'https://apis.ccbp.in/movies-app/popular-movies'
+    const options = {
+      method: 'GET',
+      headers: {Authorization: `Bearer ${jwtToken}`},
+    }
+    const response = await fetch(popularUrl, options)
+    const data = await response.json()
+    if (response.ok) {
+      const fetchedPopularData = data.results.map(eachMovie => ({
+        backdropPath: eachMovie.backdrop_path,
+        overview: eachMovie.overview,
+        id: eachMovie.id,
+        posterPath: eachMovie.poster_path,
+        title: eachMovie.title,
+      }))
+      this.setState({
+        appPopularStatus: appPopularConstants.success,
+        popularMovies: fetchedPopularData,
+      })
+    } else {
+      this.setState({appPopularStatus: appPopularConstants.failure})
+    }
   }
 
   getTrendingMovies = async () => {
@@ -163,6 +198,10 @@ class Home extends Component {
     this.getTrendingMovies()
   }
 
+  retryPopularMoviesData = () => {
+    this.getPopularMovies()
+  }
+
   retryTopRatedMoviesData = () => {
     this.getTopRatedMovies()
   }
@@ -200,6 +239,22 @@ class Home extends Component {
         <div className="movie-slider-cont">
           <Slider className="slick" {...settings}>
             {trendingMovies.map(eachMovie => (
+              <HomeMovieSliderItems details={eachMovie} key={eachMovie.id} />
+            ))}
+          </Slider>
+        </div>
+      </>
+    )
+  }
+
+  successPopularView = () => {
+    const {popularMovies} = this.state
+
+    return (
+      <>
+        <div className="movie-slider-cont">
+          <Slider className="slick" {...settings}>
+            {popularMovies.map(eachMovie => (
               <HomeMovieSliderItems details={eachMovie} key={eachMovie.id} />
             ))}
           </Slider>
@@ -263,6 +318,28 @@ class Home extends Component {
         </p>
         <button
           onClick={this.retryTrendingMoviesData}
+          className="thumbnail-try-again-btn"
+          type="button"
+        >
+          Try Again
+        </button>
+      </div>
+    </div>
+  )
+
+  failurePopularView = () => (
+    <div className="error-cont">
+      <div className="error-page">
+        <img
+          className="thumbnail-warning-icon"
+          alt="failure view"
+          src="https://res.cloudinary.com/dkbxi5qts/image/upload/v1660451047/movies%20prime%20app/alert-triangle_najaul.png"
+        />
+        <p className="thumbnail-error-msg">
+          Something went wrong. Please try again
+        </p>
+        <button
+          onClick={this.retryPopularMoviesData}
           className="thumbnail-try-again-btn"
           type="button"
         >
@@ -396,6 +473,20 @@ class Home extends Component {
     }
   }
 
+  renderPopularSlider = () => {
+    const {appPopularStatus} = this.state
+    switch (appPopularStatus) {
+      case appPopularConstants.success:
+        return this.successPopularView()
+      case appPopularConstants.inProgress:
+        return this.inProgressView()
+      case appPopularConstants.failure:
+        return this.failurePopularView()
+      default:
+        return null
+    }
+  }
+
   renderHomePosterView = () => {
     const {appOriginalsStatus} = this.state
     switch (appOriginalsStatus) {
@@ -420,6 +511,9 @@ class Home extends Component {
         {this.renderTopRatedSlider()}
         <h1 className="home-section-wise-name">Originals</h1>
         {this.renderOriginalsSlider()}
+        <h1 className="home-section-wise-name">Popular</h1>
+        {this.renderPopularSlider()}
+
         <Footer />
       </div>
     )
